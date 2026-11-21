@@ -1,0 +1,25 @@
+# виртуальные окружения и кэш
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# тесты и служебные файлы
+tests
+legacy
+*.db
+*.log
+
+# секреты и локальная конфигурация
+.env
+.env.*
+
+# репозиторий и документация
+.git
+.gitignore
+*.html
+*_files
+README.md
+АУДИТ-VPf11.md
+ТЗ-*.md

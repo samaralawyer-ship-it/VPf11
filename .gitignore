@@ -1,0 +1,21 @@
+# Секреты и данные
+.env
+.env.*
+!.env.example
+*.db
+*.log
+
+# Страница урока
+*.html
+*_files/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+pytest-of-*/
+
+# Прочее
+.DS_Store

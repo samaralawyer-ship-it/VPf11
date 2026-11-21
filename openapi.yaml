@@ -1,0 +1,250 @@
+openapi: 3.0.3
+info:
+  title: Users API
+  version: 1.0.0
+  description: |
+    Учебный сервис пользователей: аудит плохого кода, исправленная реализация,
+    Docker-упаковка. Пароли хранятся как pbkdf2-хеш с солью и никогда не возвращаются.
+servers:
+  - url: http://localhost:8090
+    description: контейнер локально
+  - url: http://localhost:8000
+    description: запуск через python run.py
+
+paths:
+  /health:
+    get:
+      summary: Проверка живости
+      responses:
+        "200":
+          description: сервис и база доступны
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: база недоступна
+
+  /adduser:
+    post:
+      summary: Создать пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddUserRequest"
+      responses:
+        "201":
+          description: создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /user/{id}:
+    get:
+      summary: Пользователь по идентификатору
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /user:
+    get:
+      summary: Пользователь по имени
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: имя пустое или слишком длинное
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /activate/{id}:
+    post:
+      summary: Отметить пользователя активным
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "202":
+          description: добавлен в активные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveList"
+        "404":
+          description: пользователя нет
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /active:
+    get:
+      summary: Список активных пользователей
+      responses:
+        "200":
+          description: снимок списка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveList"
+
+  /slow:
+    get:
+      summary: Долгая вычислительная задача
+      parameters:
+        - name: n
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100000
+            default: 1000
+      responses:
+        "200":
+          description: результат вычисления
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlowResult"
+        "400":
+          description: n вне диапазона
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name, tags]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Иван
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["стартер", "new"]
+
+    AddUserRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 80
+          example: Иван
+        tags:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 40
+          example: ["стартер"]
+        password:
+          type: string
+          minLength: 6
+          writeOnly: true
+          example: secret123
+
+    ActiveList:
+      type: object
+      required: [active, count]
+      properties:
+        active:
+          type: array
+          items:
+            type: integer
+          example: [1, 2]
+        count:
+          type: integer
+          example: 2
+
+    SlowResult:
+      type: object
+      required: [n, result, seconds]
+      properties:
+        n:
+          type: integer
+          example: 1000
+        result:
+          type: integer
+          example: 332833500
+        seconds:
+          type: number
+          format: float
+          example: 0.0001
+
+    Health:
+      type: object
+      required: [status, db]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        db:
+          type: string
+          enum: [ok, fail]
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: имя не может быть пустым
+        status:
+          type: integer
+          example: 400
